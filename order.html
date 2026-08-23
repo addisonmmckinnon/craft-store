@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Cart · Craft Co.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="nav-inner">
+      <a class="site-title" href="index.html">Craft Co.</a>
+      <nav class="site-nav">
+        <a href="index.html">Home</a>
+        <a href="shop.html">Shop</a>
+        <a href="limited.html">Limited Edition</a>
+        <a href="order.html">Cart <span class="cart-badge cart-count">0</span></a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section>
+      <h1>Your Cart</h1>
+
+      <div class="cart-list">
+        <div id="cart-list"></div>
+        <p id="cart-empty-state" class="empty-state hidden">Your cart is empty — go add some crafts!</p>
+        <div class="cart-total">
+          <span>Total</span>
+          <span id="cart-total-amount">$0.00</span>
+        </div>
+      </div>
+
+      <div class="pay-note">💵 Payment is due at pickup/delivery (cash or check) — no online payment yet.</div>
+
+      <form id="order-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="buyer-name">Your Name</label>
+            <input type="text" id="buyer-name" name="Buyer Name" required />
+          </div>
+          <div class="form-group">
+            <label for="buyer-email">Email</label>
+            <input type="email" id="buyer-email" name="Email" required />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="notes">Notes (colors, custom requests, etc.)</label>
+          <textarea id="notes" name="Notes"></textarea>
+        </div>
+
+        <input type="hidden" id="order-summary" name="Order Summary" />
+
+        <button class="btn btn-primary" type="submit">Submit Order</button>
+        <p id="order-error" class="hidden form-error"></p>
+      </form>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p>Craft Co. &middot; Handmade by two cousins</p>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
