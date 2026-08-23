@@ -9,7 +9,7 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
 ## Who makes what
 - Addy: 3D printed items (keychains, phone stands, fidget spinners, desk
   organizers, custom name signs)
-- Cousin: paper and balloon squishies (part of the viral squishy trend)
+- Cousin: paper and clay squishies (part of the viral squishy trend, including mystery dumpling squishies)
 
 ## Design choices
 - Teal/coral/cream palette (see `:root` in `style.css`)
