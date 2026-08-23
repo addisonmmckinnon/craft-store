@@ -14,6 +14,8 @@ const PRODUCTS = [
   { id: "mystery-dumpling-paper", name: "Mystery Dumpling - Paper", maker: "Paper Squishy", price: 5 },
   { id: "mystery-dumpling-clay", name: "Mystery Dumpling - Clay", maker: "Clay Craft", price: 6 },
   { id: "squishy-bundle", name: "Squishy Bundle (3-Pack)", maker: "Squishy Bundle", price: 10 },
+  { id: "bracelet", name: "Handmade Bracelet", maker: "Bracelet", price: 6 },
+  { id: "squishy-stand-clay", name: "Squishy Stand - Clay", maker: "Clay Craft", price: 7 },
   { id: "articulated-dragon", name: "Articulated Dragon", maker: "3D Printed", price: 14, limited: true },
   { id: "gyro-fidget", name: "Gyro Fidget", maker: "3D Printed", price: 9, limited: true },
   { id: "infinity-cube", name: "Infinity Cube", maker: "3D Printed", price: 10, limited: true },
