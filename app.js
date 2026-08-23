@@ -22,6 +22,7 @@ const PRODUCTS = [
   { id: "infinity-cube", name: "Infinity Cube", maker: "3D Printed", price: 10, limited: true },
   { id: "flexi-animal", name: "Flexi Animal", maker: "3D Printed", price: 11, limited: true },
   { id: "mini-viral-vase", name: "Mini Viral Vase", maker: "3D Printed", price: 8, limited: true },
+  { id: "butter-squishy", name: "Butter Squishy", maker: "Paper Squishy", price: 5, limited: true },
 ];
 
 /* ──────────────────────────────────────────────
