@@ -16,6 +16,7 @@ const PRODUCTS = [
   { id: "squishy-bundle", name: "Squishy Bundle (3-Pack)", maker: "Squishy Bundle", price: 10 },
   { id: "bracelet", name: "Handmade Bracelet", maker: "Bracelet", price: 6 },
   { id: "squishy-stand-clay", name: "Squishy Stand - Clay", maker: "Clay Craft", price: 7 },
+  { id: "smores-squishy", name: "S'mores Squishy", maker: "Paper Squishy", price: 4 },
   { id: "articulated-dragon", name: "Articulated Dragon", maker: "3D Printed", price: 14, limited: true },
   { id: "gyro-fidget", name: "Gyro Fidget", maker: "3D Printed", price: 9, limited: true },
   { id: "infinity-cube", name: "Infinity Cube", maker: "3D Printed", price: 10, limited: true },
@@ -245,7 +246,14 @@ if (cartListEl) {
       cartListEl.appendChild(row);
     });
 
-    cartTotalEl.textContent = formatMoney(cartTotal());
+    const rawTotal = cartTotal();
+    const finalTotal = isPaidMember() ? rawTotal * (1 - MEMBER_DISCOUNT) : rawTotal;
+
+    if (isPaidMember()) {
+      cartTotalEl.innerHTML = `<span style="text-decoration: line-through; color: var(--text-light); font-size: 0.9rem;">${formatMoney(rawTotal)}</span> ${formatMoney(finalTotal)} <span style="font-size: 0.8rem; color: var(--teal-dark);">(member discount applied)</span>`;
+    } else {
+      cartTotalEl.textContent = formatMoney(finalTotal);
+    }
 
     if (orderSummaryInput) {
       const summary = entries
@@ -255,11 +263,71 @@ if (cartListEl) {
         })
         .filter(Boolean)
         .join(", ");
-      orderSummaryInput.value = `${summary} — Total: ${formatMoney(cartTotal())}`;
+      orderSummaryInput.value = `${summary} — Total: ${formatMoney(finalTotal)}${isPaidMember() ? " (member discount applied)" : ""}`;
     }
   }
 
   renderCart();
+}
+
+/* ──────────────────────────────────────────────
+   PAID MEMBERSHIP (member.html)
+   $10/month for 10% off every order — like everything else on this
+   site, there's no online payment yet, so joining just marks you as a
+   member locally; the $10 is paid at pickup like a normal order, same
+   as everything else, until a real payment system exists.
+   ────────────────────────────────────────────── */
+const MEMBER_FEE = 10;
+const MEMBER_DISCOUNT = 0.1; // 10% off
+const CANCEL_FEE = 4;
+
+function isPaidMember() {
+  return localStorage.getItem("craftPaidMember") === "yes";
+}
+
+function setPaidMember(value) {
+  localStorage.setItem("craftPaidMember", value ? "yes" : "no");
+  updateMembershipDisplay();
+}
+
+function updateMembershipDisplay() {
+  const statusEl = document.getElementById("membership-status");
+  const joinBtn = document.getElementById("join-member-btn");
+  const cancelBtn = document.getElementById("cancel-member-btn");
+  const cancelMessage = document.getElementById("cancel-message");
+  if (!statusEl || !joinBtn) return;
+
+  if (isPaidMember()) {
+    statusEl.textContent = `You're a Craft Co. Member! Enjoy ${MEMBER_DISCOUNT * 100}% off every order.`;
+    statusEl.style.color = "var(--teal-dark)";
+    joinBtn.classList.add("hidden");
+    if (cancelBtn) cancelBtn.classList.remove("hidden");
+  } else {
+    statusEl.textContent = "";
+    joinBtn.classList.remove("hidden");
+    if (cancelBtn) cancelBtn.classList.add("hidden");
+    if (cancelMessage) cancelMessage.textContent = "";
+  }
+}
+
+const joinMemberBtn = document.getElementById("join-member-btn");
+if (joinMemberBtn) {
+  joinMemberBtn.addEventListener("click", function () {
+    setPaidMember(true);
+  });
+  updateMembershipDisplay();
+}
+
+const cancelMemberBtn = document.getElementById("cancel-member-btn");
+if (cancelMemberBtn) {
+  cancelMemberBtn.addEventListener("click", function () {
+    setPaidMember(false);
+    const cancelMessage = document.getElementById("cancel-message");
+    if (cancelMessage) {
+      cancelMessage.textContent = `Membership canceled — a $${CANCEL_FEE} cancellation fee is due at pickup.`;
+      cancelMessage.style.color = "var(--coral-dark)";
+    }
+  });
 }
 
 /* ──────────────────────────────────────────────
@@ -334,7 +402,7 @@ if (orderForm) {
       return;
     }
 
-    const orderTotal = cartTotal();
+    const orderTotal = isPaidMember() ? cartTotal() * (1 - MEMBER_DISCOUNT) : cartTotal();
     const data = Object.fromEntries(new FormData(orderForm).entries());
 
     try {

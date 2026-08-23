@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shop · Craft Co.</title>
+  <title>Member · Craft Co.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
@@ -25,10 +25,16 @@
   </header>
 
   <main>
-    <section>
-      <h1>Shop Our Crafts</h1>
-      <p>Tap "Add to Cart" for anything you want, then head to your cart to place the order.</p>
-      <div id="product-grid" class="product-grid"></div>
+    <section class="hero">
+      <h1>Become a Craft Co. Member</h1>
+      <p>Pay $10/month and get 10% off every order, automatically — on top of anything you already earn from Rewards points.</p>
+
+      <p id="membership-status" style="font-weight: 700; min-height: 1.2rem;"></p>
+      <button id="join-member-btn" class="btn btn-secondary">Become a Member ($10/month)</button>
+      <button id="cancel-member-btn" class="btn btn-primary hidden">Cancel Membership ($4 fee)</button>
+      <p id="cancel-message" style="font-weight: 700; margin-top: 0.75rem; min-height: 1.2rem;"></p>
+
+      <p class="pay-note" style="margin-top: 1.5rem;">💵 Like everything else on this site, the $10/month (and the $4 cancellation fee, if you cancel) is paid at pickup (cash or check) — no online payment yet.</p>
     </section>
   </main>
 
