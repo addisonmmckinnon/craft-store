@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Members · Craft Co.</title>
+  <title>Cousins Only · Craft Co.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
@@ -26,18 +26,21 @@
   </header>
 
   <main>
-    <section class="hero">
-      <h1>Craft Co. Rewards</h1>
-      <p>Earn 1 point for every $1 you spend. 25 points = $2 off a future order!</p>
+    <section id="passcode-gate" class="hero">
+      <h1>Cousins Only 🔒</h1>
+      <p>Enter the passcode to get in.</p>
+      <form id="passcode-form" style="max-width: 280px; margin: 0 auto; box-shadow: none; padding: 0; background: none;">
+        <input type="password" id="passcode-input" placeholder="Passcode" required />
+        <button type="submit" class="btn btn-secondary" style="margin-top: 1rem; width: 100%;">Enter</button>
+        <p id="passcode-error" class="hidden form-error"></p>
+      </form>
+    </section>
 
-      <div class="crafter-card" style="max-width: 320px; margin: 0 auto;">
-        <h3>Your Points</h3>
-        <p style="font-family: 'Baloo 2', cursive; font-size: 2.5rem; color: var(--coral); margin: 0;">
-          <span class="points-count">0</span>
-        </p>
-        <button id="redeem-btn" class="btn btn-primary btn-small" style="margin-top: 1rem;">Redeem 25 Points for $2 Off</button>
-        <p id="redeem-message" style="font-weight: 700; margin-top: 0.75rem; min-height: 1.2rem;"></p>
-      </div>
+    <section id="private-content" class="hero hidden">
+      <h1>Private Notes 📝</h1>
+      <p>Just for us two — ideas, reminders, whatever. Saved on this device.</p>
+      <textarea id="private-notes" style="min-height: 220px;" placeholder="Write notes here..."></textarea>
+      <p id="notes-saved-message" style="font-weight: 700; color: var(--teal-dark); min-height: 1.2rem; margin-top: 0.5rem;"></p>
     </section>
   </main>
 
