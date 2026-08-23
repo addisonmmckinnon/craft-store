@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Craft Co.</title>
+  <title>Members · Craft Co.</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700&family=Nunito:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
@@ -25,25 +25,16 @@
 
   <main>
     <section class="hero">
-      <h1>Welcome to Craft Co.</h1>
-      <p>
-        A little handmade shop run by two cousins! One of us 3D prints
-        fun stuff, the other makes viral paper and balloon squishies —
-        together we've got something for everyone.
-      </p>
-      <div class="hero-buttons">
-        <a class="btn btn-primary" href="shop.html">Shop Now</a>
-      </div>
+      <h1>Craft Co. Rewards</h1>
+      <p>Earn 1 point for every $1 you spend. 25 points = $2 off a future order!</p>
 
-      <div class="crafters-row">
-        <div class="crafter-card">
-          <h3>3D Printing</h3>
-          <p>Keychains, phone stands, fidget toys, custom name signs, and more — all designed and printed by hand.</p>
-        </div>
-        <div class="crafter-card">
-          <h3>Paper &amp; Balloon Squishies</h3>
-          <p>Handmade squishies inspired by the viral trend — soft, squishy, and made with love.</p>
-        </div>
+      <div class="crafter-card" style="max-width: 320px; margin: 0 auto;">
+        <h3>Your Points</h3>
+        <p style="font-family: 'Baloo 2', cursive; font-size: 2.5rem; color: var(--coral); margin: 0;">
+          <span class="points-count">0</span>
+        </p>
+        <button id="redeem-btn" class="btn btn-primary btn-small" style="margin-top: 1rem;">Redeem 25 Points for $2 Off</button>
+        <p id="redeem-message" style="font-weight: 700; margin-top: 0.75rem; min-height: 1.2rem;"></p>
       </div>
     </section>
   </main>

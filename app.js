@@ -261,6 +261,54 @@ if (cartListEl) {
 }
 
 /* ──────────────────────────────────────────────
+   MEMBER POINTS (members.html)
+   Earn 1 point per $1 spent (rounded down); 25 points = $2 off a future
+   order. Stored in localStorage, so it's per-device, not a real account
+   — good enough for now, same spirit as the rest of this site.
+   ────────────────────────────────────────────── */
+const POINTS_PER_DOLLAR = 1;
+const REDEEM_POINTS = 25;
+const REDEEM_VALUE = 2;
+
+function getPoints() {
+  const saved = localStorage.getItem("craftPoints");
+  return saved ? Number(saved) : 0;
+}
+
+function setPoints(points) {
+  localStorage.setItem("craftPoints", String(points));
+  updatePointsDisplays();
+}
+
+function addPoints(amount) {
+  setPoints(getPoints() + Math.floor(amount * POINTS_PER_DOLLAR));
+}
+
+function updatePointsDisplays() {
+  document.querySelectorAll(".points-count").forEach((el) => {
+    el.textContent = getPoints();
+  });
+}
+
+updatePointsDisplays();
+
+const redeemBtn = document.getElementById("redeem-btn");
+if (redeemBtn) {
+  const redeemMessage = document.getElementById("redeem-message");
+
+  redeemBtn.addEventListener("click", function () {
+    if (getPoints() < REDEEM_POINTS) {
+      redeemMessage.textContent = `You need ${REDEEM_POINTS} points to redeem — keep shopping!`;
+      redeemMessage.style.color = "var(--coral-dark)";
+      return;
+    }
+    setPoints(getPoints() - REDEEM_POINTS);
+    redeemMessage.textContent = `Redeemed! Show this screen at pickup for $${REDEEM_VALUE} off.`;
+    redeemMessage.style.color = "var(--teal-dark)";
+  });
+}
+
+/* ──────────────────────────────────────────────
    ORDER FORM SUBMIT
    Addy & cousin: this needs a Cloudflare Worker (same pattern as the
    babysitting site) to actually email/save the order — set
@@ -284,6 +332,7 @@ if (orderForm) {
       return;
     }
 
+    const orderTotal = cartTotal();
     const data = Object.fromEntries(new FormData(orderForm).entries());
 
     try {
@@ -295,6 +344,7 @@ if (orderForm) {
 
       if (!response.ok) throw new Error("Worker responded with an error");
 
+      addPoints(orderTotal);
       setCart({});
       window.location.href = "thankyou.html";
     } catch (error) {
