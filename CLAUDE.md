@@ -49,6 +49,16 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
 - To redeploy after changes: `firebase deploy --only hosting` from this
   folder.
 
+## Paid membership passcode
+- `member.html` has two parts: anyone can click "I Want to Join" to see
+  the join instructions, but the 10% discount only turns on after
+  entering `MEMBER_PASSCODE` (set in `app.js`, currently `"craft10"`).
+- There's no automatic emailing yet — when a customer pays the $10/month
+  at pickup, you or your cousin manually email them the current
+  passcode. If it gets shared around too much, change `MEMBER_PASSCODE`
+  in `app.js` and redeploy; anyone already activated stays activated
+  since that's tracked separately per-device.
+
 ## Next steps for Addy & cousin
 - [ ] Take real photos of your products and swap them in for the
       placeholder boxes

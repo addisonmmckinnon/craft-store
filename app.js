@@ -272,14 +272,18 @@ if (cartListEl) {
 
 /* ──────────────────────────────────────────────
    PAID MEMBERSHIP (member.html)
-   $10/month for 10% off every order — like everything else on this
-   site, there's no online payment yet, so joining just marks you as a
-   member locally; the $10 is paid at pickup like a normal order, same
-   as everything else, until a real payment system exists.
+   $10/month for 10% off every order. Not real payment or a real account
+   system: a customer clicks "I Want to Join," pays $10/month at pickup
+   (cash or check) like everything else on this site, and Addy/cousin
+   manually email them MEMBER_PASSCODE — entering it here turns on their
+   discount. Change MEMBER_PASSCODE below whenever you want (e.g. if it
+   gets shared around); everyone who already activated stays activated
+   since that's tracked separately per-device.
    ────────────────────────────────────────────── */
 const MEMBER_FEE = 10;
 const MEMBER_DISCOUNT = 0.1; // 10% off
 const CANCEL_FEE = 4;
+const MEMBER_PASSCODE = "craft10";
 
 function isPaidMember() {
   return localStorage.getItem("craftPaidMember") === "yes";
@@ -292,28 +296,47 @@ function setPaidMember(value) {
 
 function updateMembershipDisplay() {
   const statusEl = document.getElementById("membership-status");
-  const joinBtn = document.getElementById("join-member-btn");
   const cancelBtn = document.getElementById("cancel-member-btn");
   const cancelMessage = document.getElementById("cancel-message");
-  if (!statusEl || !joinBtn) return;
+  const passcodeForm = document.getElementById("member-passcode-form");
+  if (!statusEl) return;
 
   if (isPaidMember()) {
     statusEl.textContent = `You're a Craft Co. Member! Enjoy ${MEMBER_DISCOUNT * 100}% off every order.`;
     statusEl.style.color = "var(--teal-dark)";
-    joinBtn.classList.add("hidden");
     if (cancelBtn) cancelBtn.classList.remove("hidden");
+    if (passcodeForm) passcodeForm.classList.add("hidden");
   } else {
     statusEl.textContent = "";
-    joinBtn.classList.remove("hidden");
     if (cancelBtn) cancelBtn.classList.add("hidden");
     if (cancelMessage) cancelMessage.textContent = "";
+    if (passcodeForm) passcodeForm.classList.remove("hidden");
   }
 }
 
-const joinMemberBtn = document.getElementById("join-member-btn");
-if (joinMemberBtn) {
-  joinMemberBtn.addEventListener("click", function () {
-    setPaidMember(true);
+const requestJoinBtn = document.getElementById("request-join-btn");
+if (requestJoinBtn) {
+  const requestJoinMessage = document.getElementById("request-join-message");
+  requestJoinBtn.addEventListener("click", function () {
+    requestJoinMessage.textContent = "Thanks! Pay $10/month at pickup and we'll email your activation passcode.";
+    requestJoinMessage.style.color = "var(--teal-dark)";
+  });
+}
+
+const memberPasscodeForm = document.getElementById("member-passcode-form");
+if (memberPasscodeForm) {
+  const memberPasscodeInput = document.getElementById("member-passcode-input");
+  const memberPasscodeError = document.getElementById("member-passcode-error");
+
+  memberPasscodeForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    if (memberPasscodeInput.value === MEMBER_PASSCODE) {
+      memberPasscodeError.classList.add("hidden");
+      setPaidMember(true);
+    } else {
+      memberPasscodeError.textContent = "Wrong passcode — check your email or ask us to resend it.";
+      memberPasscodeError.classList.remove("hidden");
+    }
   });
   updateMembershipDisplay();
 }

@@ -30,12 +30,24 @@
       <h1>Become a Craft Co. Member</h1>
       <p>Pay $10/month and get 10% off every order, automatically — on top of anything you already earn from Rewards points.</p>
 
-      <p id="membership-status" style="font-weight: 700; min-height: 1.2rem;"></p>
-      <button id="join-member-btn" class="btn btn-secondary">Become a Member ($10/month)</button>
+      <button id="request-join-btn" class="btn btn-secondary">I Want to Join</button>
+      <p id="request-join-message" style="font-weight: 700; margin-top: 0.75rem; min-height: 1.2rem;"></p>
+
+      <p class="pay-note" style="margin-top: 1.5rem;">💵 Pay $10/month at pickup (cash or check) — we'll email you a passcode to activate your discount below.</p>
+    </section>
+
+    <section class="hero" style="margin-top: 1.5rem;">
+      <h2>Already a Member?</h2>
+      <p>Enter the passcode we emailed you to turn on your discount.</p>
+      <form id="member-passcode-form" style="max-width: 280px; margin: 0 auto; box-shadow: none; padding: 0; background: none;">
+        <input type="password" id="member-passcode-input" placeholder="Passcode" required />
+        <button type="submit" class="btn btn-secondary" style="margin-top: 1rem; width: 100%;">Activate</button>
+        <p id="member-passcode-error" class="hidden form-error"></p>
+      </form>
+
+      <p id="membership-status" style="font-weight: 700; min-height: 1.2rem; margin-top: 1rem;"></p>
       <button id="cancel-member-btn" class="btn btn-primary hidden">Cancel Membership ($4 fee)</button>
       <p id="cancel-message" style="font-weight: 700; margin-top: 0.75rem; min-height: 1.2rem;"></p>
-
-      <p class="pay-note" style="margin-top: 1.5rem;">💵 Like everything else on this site, the $10/month (and the $4 cancellation fee, if you cancel) is paid at pickup (cash or check) — no online payment yet.</p>
     </section>
   </main>
 
