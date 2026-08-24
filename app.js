@@ -403,10 +403,9 @@ if (redeemBtn) {
 }
 
 /* ──────────────────────────────────────────────
-   PRIVATE PAGE (private.html)
-   Not real security — just a passcode to keep casual visitors out of a
-   private notes area for the two cousins. Notes are saved per-device in
-   localStorage.
+   PRIVATE PAGE PASSCODE GATE (private.html)
+   Not real security — just a passcode to keep casual visitors out of the
+   text thread. Chat logic itself lives in chat.js.
    ────────────────────────────────────────────── */
 const PASSCODE = "ae";
 
@@ -414,40 +413,20 @@ const passcodeForm = document.getElementById("passcode-form");
 
 if (passcodeForm) {
   const passcodeGate = document.getElementById("passcode-gate");
-  const privateContent = document.getElementById("private-content");
   const passcodeInput = document.getElementById("passcode-input");
   const passcodeError = document.getElementById("passcode-error");
-  const notesInput = document.getElementById("private-notes");
-  const notesSavedMessage = document.getElementById("notes-saved-message");
-
-  function unlockPrivate() {
-    passcodeGate.classList.add("hidden");
-    privateContent.classList.remove("hidden");
-    notesInput.value = localStorage.getItem("craftPrivateNotes") || "";
-  }
 
   passcodeForm.addEventListener("submit", function (event) {
     event.preventDefault();
     if (passcodeInput.value === PASSCODE) {
       sessionStorage.setItem("craftPrivateUnlocked", "true");
       passcodeError.classList.add("hidden");
-      unlockPrivate();
+      passcodeGate.classList.add("hidden");
+      if (typeof afterPasscodeUnlock === "function") afterPasscodeUnlock();
     } else {
       passcodeError.textContent = "Wrong passcode — try again.";
       passcodeError.classList.remove("hidden");
     }
-  });
-
-  if (sessionStorage.getItem("craftPrivateUnlocked") === "true") {
-    unlockPrivate();
-  }
-
-  let saveTimeout;
-  notesInput.addEventListener("input", function () {
-    localStorage.setItem("craftPrivateNotes", notesInput.value);
-    notesSavedMessage.textContent = "Saved!";
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(() => (notesSavedMessage.textContent = ""), 1200);
   });
 }
 

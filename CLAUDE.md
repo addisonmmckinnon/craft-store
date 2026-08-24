@@ -59,6 +59,22 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
   in `app.js` and redeploy; anyone already activated stays activated
   since that's tracked separately per-device.
 
+## Cousins-only text thread
+- `private.html` (behind the "ae" passcode) is a real, live, two-way chat
+  between Addy and her cousin — not just local notes. It uses its own
+  Firebase Realtime Database (`chat.js`, config at the top), set up in
+  the same `craft-store-addy` Firebase project as hosting.
+- On first visit each person picks "I'm Addy" or "I'm Cousin" (saved in
+  `localStorage`), which decides which side their bubbles show on. Text
+  messages send instantly to both people via `privateChat/messages` in
+  the database and support emoji (the row of quick-tap buttons above the
+  input, or typing them directly).
+- The database rules are wide open (`.read`/`.write`: true) so anyone
+  with the database URL could technically read/write it — the "ae"
+  passcode is the only thing actually keeping randoms out, same as the
+  rest of this site's passcodes. Good enough for two cousins texting
+  about crafts, not for anything truly sensitive.
+
 ## Next steps for Addy & cousin
 - [ ] Take real photos of your products and swap them in for the
       placeholder boxes
