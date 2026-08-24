@@ -285,6 +285,7 @@ const MEMBER_FEE = 10;
 const MEMBER_DISCOUNT = 0.1; // 10% off
 const CANCEL_FEE = 4;
 const MEMBER_PASSCODE = "craft10";
+const CANCEL_PASSCODE = "123shop";
 
 function isPaidMember() {
   return localStorage.getItem("craftPaidMember") === "yes";
@@ -299,6 +300,7 @@ function updateMembershipDisplay() {
   const statusEl = document.getElementById("membership-status");
   const cancelBtn = document.getElementById("cancel-member-btn");
   const cancelMessage = document.getElementById("cancel-message");
+  const cancelPasscodeForm = document.getElementById("cancel-passcode-form");
   const passcodeForm = document.getElementById("member-passcode-form");
   if (!statusEl) return;
 
@@ -310,6 +312,7 @@ function updateMembershipDisplay() {
   } else {
     statusEl.textContent = "";
     if (cancelBtn) cancelBtn.classList.add("hidden");
+    if (cancelPasscodeForm) cancelPasscodeForm.classList.add("hidden");
     if (cancelMessage) cancelMessage.textContent = "";
     if (passcodeForm) passcodeForm.classList.remove("hidden");
   }
@@ -343,13 +346,32 @@ if (memberPasscodeForm) {
 }
 
 const cancelMemberBtn = document.getElementById("cancel-member-btn");
-if (cancelMemberBtn) {
+const cancelPasscodeForm = document.getElementById("cancel-passcode-form");
+if (cancelMemberBtn && cancelPasscodeForm) {
+  const cancelPasscodeInput = document.getElementById("cancel-passcode-input");
+  const cancelPasscodeError = document.getElementById("cancel-passcode-error");
+  const cancelMessage = document.getElementById("cancel-message");
+
   cancelMemberBtn.addEventListener("click", function () {
-    setPaidMember(false);
-    const cancelMessage = document.getElementById("cancel-message");
-    if (cancelMessage) {
-      cancelMessage.textContent = `Membership canceled — a $${CANCEL_FEE} cancellation fee is due at pickup.`;
-      cancelMessage.style.color = "var(--coral-dark)";
+    cancelMemberBtn.classList.add("hidden");
+    cancelPasscodeForm.classList.remove("hidden");
+    cancelPasscodeInput.focus();
+  });
+
+  cancelPasscodeForm.addEventListener("submit", function (event) {
+    event.preventDefault();
+    if (cancelPasscodeInput.value === CANCEL_PASSCODE) {
+      cancelPasscodeError.classList.add("hidden");
+      cancelPasscodeForm.classList.add("hidden");
+      cancelPasscodeInput.value = "";
+      setPaidMember(false);
+      if (cancelMessage) {
+        cancelMessage.textContent = `Membership canceled — a $${CANCEL_FEE} cancellation fee is due at pickup.`;
+        cancelMessage.style.color = "var(--coral-dark)";
+      }
+    } else {
+      cancelPasscodeError.textContent = "Wrong passcode — ask us for the cancellation passcode.";
+      cancelPasscodeError.classList.remove("hidden");
     }
   });
 }

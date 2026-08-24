@@ -58,6 +58,11 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
   passcode. If it gets shared around too much, change `MEMBER_PASSCODE`
   in `app.js` and redeploy; anyone already activated stays activated
   since that's tracked separately per-device.
+- Canceling requires its own separate passcode, `CANCEL_PASSCODE` in
+  `app.js` (currently `"123shop"`) — so a member can't accidentally (or
+  a random visitor can't) cancel with one click. Only Addy/cousin should
+  know this one; give it out to a member only if they actually want to
+  cancel.
 
 ## Cousins-only text thread
 - `private.html` (behind the "ae" passcode) is a real, live, two-way chat
