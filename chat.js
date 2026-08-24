@@ -248,6 +248,8 @@ if (whoamiGate && chatSection) {
     let inCall = false;
     let myRole = null; // "caller" or "callee" once a call starts
     let answerListenerRef = null;
+    let candidateListener = null; // { ref, handler } for the currently-watched candidate path
+    let pendingCandidates = []; // candidates that arrive before we have a remote description yet
 
     function showCallBar(html) {
       callBar.classList.remove("call-bar-error");
@@ -271,9 +273,14 @@ if (whoamiGate && chatSection) {
     function cleanupCall() {
       inCall = false;
       myRole = null;
+      pendingCandidates = [];
       if (answerListenerRef) {
         answerListenerRef.off();
         answerListenerRef = null;
+      }
+      if (candidateListener) {
+        candidateListener.ref.off("child_added", candidateListener.handler);
+        candidateListener = null;
       }
       if (pc) {
         pc.close();
@@ -308,6 +315,35 @@ if (whoamiGate && chatSection) {
       return connection;
     }
 
+    // A candidate can arrive over Firebase before setRemoteDescription()
+    // has finished (the other person answers slower than their connection
+    // info arrives). Queue it and add it later instead of dropping it —
+    // dropping candidates was the reason calls connected but had no audio.
+    function addRemoteCandidate(data) {
+      if (pc.remoteDescription && pc.remoteDescription.type) {
+        pc.addIceCandidate(new RTCIceCandidate(data)).catch(() => {});
+      } else {
+        pendingCandidates.push(data);
+      }
+    }
+
+    function flushPendingCandidates() {
+      pendingCandidates.forEach((data) => {
+        pc.addIceCandidate(new RTCIceCandidate(data)).catch(() => {});
+      });
+      pendingCandidates = [];
+    }
+
+    // Firebase replays every already-existing item under theirPath the
+    // moment we attach this listener, so candidates sent before we
+    // answered/were answered still get delivered, not just future ones.
+    function listenForCandidates(theirPath) {
+      const ref = callRef.child(theirPath);
+      const handler = (snap) => addRemoteCandidate(snap.val());
+      ref.on("child_added", handler);
+      candidateListener = { ref, handler };
+    }
+
     async function startCall() {
       startCallBtn.classList.add("hidden");
       showCallBar(`<span>📞 Calling ${otherName()}...</span>`);
@@ -321,6 +357,7 @@ if (whoamiGate && chatSection) {
       inCall = true;
       myRole = "caller";
       pc = makePeerConnection("callerCandidates");
+      listenForCandidates("calleeCandidates");
       localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
 
       const offer = await pc.createOffer();
@@ -339,6 +376,7 @@ if (whoamiGate && chatSection) {
         const answer = snap.val();
         if (answer && pc && !pc.currentRemoteDescription) {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
+          flushPendingCandidates();
           showCallBar(`<span>📞 On call with ${otherName()}</span> <button id="end-call-btn" class="btn btn-primary btn-small">End</button>`);
           document.getElementById("end-call-btn").addEventListener("click", endCall);
         }
@@ -359,9 +397,11 @@ if (whoamiGate && chatSection) {
       inCall = true;
       myRole = "callee";
       pc = makePeerConnection("calleeCandidates");
+      listenForCandidates("callerCandidates");
       localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
 
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      flushPendingCandidates();
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       await callRef.update({ status: "active", answer: { type: answer.type, sdp: answer.sdp } });
@@ -391,15 +431,6 @@ if (whoamiGate && chatSection) {
         document.getElementById("answer-call-btn").addEventListener("click", () => answerCall(call.offer));
         document.getElementById("decline-call-btn").addEventListener("click", () => callRef.remove());
       }
-    });
-
-    // Each side only listens for the OTHER side's candidates, based on
-    // whichever role (caller/callee) it currently has in this call.
-    callRef.child("callerCandidates").on("child_added", (snap) => {
-      if (pc && myRole === "callee") pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
-    });
-    callRef.child("calleeCandidates").on("child_added", (snap) => {
-      if (pc && myRole === "caller") pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
     });
 
     startCallBtn.addEventListener("click", startCall);
