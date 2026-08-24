@@ -58,15 +58,13 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
   passcode. If it gets shared around too much, change `MEMBER_PASSCODE`
   in `app.js` and redeploy; anyone already activated stays activated
   since that's tracked separately per-device.
-- Canceling requires its own separate passcode, `CANCEL_PASSCODE` in
-  `app.js` (currently `"123shop"`) — so a member can't accidentally (or
-  a random visitor can't) cancel with one click. Only Addy/cousin should
-  know this one; give it out to a member only if they actually want to
-  cancel.
+- Canceling is a single click on "Cancel Membership" — no separate
+  confirmation passcode.
 
 ## Cousins-only text thread
-- `private.html` (behind the "ae" passcode) is a real, live, two-way chat
-  between Addy and her cousin — not just local notes. It uses its own
+- `private.html` (behind the `PASSCODE` in `app.js`, currently
+  `"123shop"`) is a real, live, two-way chat between Addy and her cousin
+  — not just local notes. It uses its own
   Firebase Realtime Database (`chat.js`, config at the top), set up in
   the same `craft-store-addy` Firebase project as hosting.
 - On first visit each person picks "I'm Addy" or "I'm Cousin" (saved in
@@ -75,8 +73,8 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
   the database and support emoji (the row of quick-tap buttons above the
   input, or typing them directly).
 - The database rules are wide open (`.read`/`.write`: true) so anyone
-  with the database URL could technically read/write it — the "ae"
-  passcode is the only thing actually keeping randoms out, same as the
+  with the database URL could technically read/write it — `PASSCODE` is
+  the only thing actually keeping randoms out, same as the
   rest of this site's passcodes. Good enough for two cousins texting
   about crafts, not for anything truly sensitive.
 
