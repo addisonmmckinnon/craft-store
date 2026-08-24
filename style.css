@@ -487,6 +487,10 @@ main {
   font-weight: 700;
 }
 
+.call-bar.call-bar-error {
+  background: var(--coral-dark);
+}
+
 /* ── Forms ── */
 form {
   background: var(--white);

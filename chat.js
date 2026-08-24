@@ -217,25 +217,64 @@ if (whoamiGate && chatSection) {
     setupCalling(db);
   }
 
-  /* ── Audio call over WebRTC, signaled through Firebase ── */
+  /* ── Audio call over WebRTC, signaled through Firebase ──
+     STUN alone (just the Google server) often can't connect two phones/
+     computers on two different home WiFi networks — it only helps find
+     each device's public address, but a lot of home routers still block
+     the direct connection after that. A TURN server relays the audio
+     through a middle server when a direct connection fails, which is
+     what actually makes calls across two different houses work. The
+     TURN server below (Open Relay Project) is a free public one made
+     for exactly this — no account needed. */
   function setupCalling(db) {
-    const ICE_SERVERS = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+    const ICE_SERVERS = {
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+          urls: "turn:openrelay.metered.ca:80",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+        {
+          urls: "turn:openrelay.metered.ca:443",
+          username: "openrelayproject",
+          credential: "openrelayproject",
+        },
+      ],
+    };
     const callRef = db.ref("privateChat/call");
     let pc = null;
     let localStream = null;
     let inCall = false;
+    let myRole = null; // "caller" or "callee" once a call starts
+    let answerListenerRef = null;
 
     function showCallBar(html) {
+      callBar.classList.remove("call-bar-error");
       callBar.innerHTML = html;
       callBar.classList.remove("hidden");
     }
+    function showCallError(message) {
+      callBar.classList.add("call-bar-error");
+      callBar.innerHTML = `<span>⚠️ ${message}</span>`;
+      callBar.classList.remove("hidden");
+      setTimeout(() => {
+        if (!inCall) hideCallBar();
+      }, 4000);
+    }
     function hideCallBar() {
       callBar.classList.add("hidden");
+      callBar.classList.remove("call-bar-error");
       callBar.innerHTML = "";
     }
 
-    async function cleanupCall() {
+    function cleanupCall() {
       inCall = false;
+      myRole = null;
+      if (answerListenerRef) {
+        answerListenerRef.off();
+        answerListenerRef = null;
+      }
       if (pc) {
         pc.close();
         pc = null;
@@ -249,24 +288,39 @@ if (whoamiGate && chatSection) {
       hideCallBar();
     }
 
-    function makePeerConnection(candidatePath) {
+    function makePeerConnection(myCandidatePath) {
       const connection = new RTCPeerConnection(ICE_SERVERS);
       connection.onicecandidate = (event) => {
         if (event.candidate) {
-          callRef.child(candidatePath).push(event.candidate.toJSON());
+          callRef.child(myCandidatePath).push(event.candidate.toJSON());
         }
       };
       connection.ontrack = (event) => {
         remoteAudio.srcObject = event.streams[0];
+      };
+      connection.oniceconnectionstatechange = () => {
+        if (["failed", "disconnected", "closed"].includes(connection.iceConnectionState) && inCall) {
+          callRef.remove();
+          cleanupCall();
+          showCallError("Call disconnected.");
+        }
       };
       return connection;
     }
 
     async function startCall() {
       startCallBtn.classList.add("hidden");
+      showCallBar(`<span>📞 Calling ${otherName()}...</span>`);
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        showCallError("Couldn't access your microphone. Check your browser's mic permission for this site.");
+        startCallBtn.classList.remove("hidden");
+        return;
+      }
       inCall = true;
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      pc = makePeerConnection("calleeCandidates");
+      myRole = "caller";
+      pc = makePeerConnection("callerCandidates");
       localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
 
       const offer = await pc.createOffer();
@@ -280,7 +334,8 @@ if (whoamiGate && chatSection) {
       showCallBar(`<span>📞 Calling ${otherName()}...</span> <button id="end-call-btn" class="btn btn-primary btn-small">End</button>`);
       document.getElementById("end-call-btn").addEventListener("click", endCall);
 
-      callRef.child("answer").on("value", async (snap) => {
+      answerListenerRef = callRef.child("answer");
+      answerListenerRef.on("value", async (snap) => {
         const answer = snap.val();
         if (answer && pc && !pc.currentRemoteDescription) {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
@@ -291,10 +346,19 @@ if (whoamiGate && chatSection) {
     }
 
     async function answerCall(offer) {
-      inCall = true;
       startCallBtn.classList.add("hidden");
-      localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      pc = makePeerConnection("callerCandidates");
+      showCallBar(`<span>📞 Connecting to ${otherName()}...</span>`);
+      try {
+        localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      } catch (err) {
+        showCallError("Couldn't access your microphone. Check your browser's mic permission for this site.");
+        startCallBtn.classList.remove("hidden");
+        callRef.remove();
+        return;
+      }
+      inCall = true;
+      myRole = "callee";
+      pc = makePeerConnection("calleeCandidates");
       localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
 
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
@@ -311,7 +375,7 @@ if (whoamiGate && chatSection) {
       cleanupCall();
     }
 
-    // Watch for incoming call ring, and ICE candidates from the other side.
+    // Watch for incoming call ring, and hang up if the other side ends the call.
     callRef.on("value", (snap) => {
       const call = snap.val();
       if (!call) {
@@ -329,11 +393,13 @@ if (whoamiGate && chatSection) {
       }
     });
 
+    // Each side only listens for the OTHER side's candidates, based on
+    // whichever role (caller/callee) it currently has in this call.
     callRef.child("callerCandidates").on("child_added", (snap) => {
-      if (pc && getMyName() !== null) pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
+      if (pc && myRole === "callee") pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
     });
     callRef.child("calleeCandidates").on("child_added", (snap) => {
-      if (pc) pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
+      if (pc && myRole === "caller") pc.addIceCandidate(new RTCIceCandidate(snap.val())).catch(() => {});
     });
 
     startCallBtn.addEventListener("click", startCall);
