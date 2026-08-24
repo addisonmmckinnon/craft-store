@@ -34,6 +34,7 @@ if (whoamiGate && chatSection) {
   const pollOptionBInput = document.getElementById("poll-option-b");
   const startCallBtn = document.getElementById("start-call-btn");
   const callBar = document.getElementById("call-bar");
+  const callDebug = document.getElementById("call-debug");
   const remoteAudio = document.getElementById("remote-audio");
 
   let chatDb = null;
@@ -268,6 +269,11 @@ if (whoamiGate && chatSection) {
       callBar.classList.add("hidden");
       callBar.classList.remove("call-bar-error");
       callBar.innerHTML = "";
+      callDebug.textContent = "";
+    }
+
+    function setDebugStatus(text) {
+      callDebug.textContent = text;
     }
 
     function cleanupCall() {
@@ -304,9 +310,21 @@ if (whoamiGate && chatSection) {
       };
       connection.ontrack = (event) => {
         remoteAudio.srcObject = event.streams[0];
+        // Browsers (especially on phones) often silently block audio from
+        // playing automatically, even with the "autoplay" attribute, if it
+        // starts a moment after the button tap instead of during it. If
+        // that happens, this fails quietly with no error — that's why a
+        // call can look "connected" but stay completely silent. The
+        // "🔊 Enable Sound" button below is a manual backup for exactly
+        // that case.
+        remoteAudio.play().catch(() => {});
       };
       connection.oniceconnectionstatechange = () => {
-        if (["failed", "disconnected", "closed"].includes(connection.iceConnectionState) && inCall) {
+        const state = connection.iceConnectionState;
+        if (state === "checking") setDebugStatus("Connecting your call…");
+        else if (state === "connected" || state === "completed") setDebugStatus("Connected — if you can't hear anything, tap 🔊 Enable Sound above.");
+        else if (state === "failed") setDebugStatus("Connection failed.");
+        if (["failed", "disconnected", "closed"].includes(state) && inCall) {
           callRef.remove();
           cleanupCall();
           showCallError("Call disconnected.");
@@ -377,7 +395,8 @@ if (whoamiGate && chatSection) {
         if (answer && pc && !pc.currentRemoteDescription) {
           await pc.setRemoteDescription(new RTCSessionDescription(answer));
           flushPendingCandidates();
-          showCallBar(`<span>📞 On call with ${otherName()}</span> <button id="end-call-btn" class="btn btn-primary btn-small">End</button>`);
+          showCallBar(`<span>📞 On call with ${otherName()}</span> <button id="sound-btn" class="btn btn-secondary btn-small">🔊 Enable Sound</button> <button id="end-call-btn" class="btn btn-primary btn-small">End</button>`);
+          document.getElementById("sound-btn").addEventListener("click", () => remoteAudio.play().catch(() => {}));
           document.getElementById("end-call-btn").addEventListener("click", endCall);
         }
       });
