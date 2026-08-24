@@ -405,6 +405,88 @@ main {
   border-radius: 999px;
 }
 
+.chat-message {
+  position: relative;
+  cursor: pointer;
+}
+
+.chat-heart {
+  position: absolute;
+  bottom: -10px;
+  right: 6px;
+  font-size: 0.9rem;
+}
+
+.chat-delete-btn {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: var(--coral);
+  color: var(--white);
+  font-size: 0.65rem;
+  line-height: 1;
+  cursor: pointer;
+  display: none;
+}
+
+.chat-message.mine:hover .chat-delete-btn {
+  display: block;
+}
+
+.poll-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin-top: 0.4rem;
+  padding: 0.4rem 0.6rem;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.15);
+  color: inherit;
+  font-family: "Nunito", sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.chat-message.theirs .poll-option {
+  border-color: var(--teal);
+  background: var(--cream);
+}
+
+.poll-option.picked {
+  background: var(--teal);
+  color: var(--white);
+  border-color: var(--teal-dark);
+}
+
+.poll-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-width: 320px;
+  margin: 0.75rem auto 0;
+  box-shadow: none;
+  background: none;
+  padding: 0;
+}
+
+.call-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  background: var(--teal);
+  color: var(--white);
+  border-radius: 999px;
+  padding: 0.6rem 1rem;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+}
+
 /* ── Forms ── */
 form {
   background: var(--white);

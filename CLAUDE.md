@@ -72,6 +72,20 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
   messages send instantly to both people via `privateChat/messages` in
   the database and support emoji (the row of quick-tap buttons above the
   input, or typing them directly).
+- Tap any message to ❤️ it (shared toggle — either person tapping it
+  turns the heart on/off for both). Each person can delete their own
+  messages (✕ button, shows on hover over your own bubbles) — deleting
+  removes it from the database for both of you.
+- "Send a Poll" lets you ask a 2-option question; tapping an option
+  records your vote (`votes/{name}: 0 or 1` on that message) and both
+  people see live tallies. You can change your vote by tapping the other
+  option.
+- The "📞 Audio Call" button starts a real one-on-one voice call using
+  WebRTC (`RTCPeerConnection` + `getUserMedia`) — audio goes directly
+  between your two devices/browsers, not through Firebase. The database
+  is only used to swap the initial connection info (offer/answer/ICE
+  candidates) under `privateChat/call`, which gets cleared when the call
+  ends. Needs microphone permission in the browser the first time.
 - The database rules are wide open (`.read`/`.write`: true) so anyone
   with the database URL could technically read/write it — `PASSCODE` is
   the only thing actually keeping randoms out, same as the

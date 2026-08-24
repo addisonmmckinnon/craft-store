@@ -49,6 +49,12 @@
       <h1>Text Thread 💬</h1>
       <p id="chat-whoami-label" style="color: var(--text-light);"></p>
 
+      <div id="call-bar" class="call-bar hidden"></div>
+
+      <button id="start-call-btn" class="btn btn-secondary btn-small">📞 Audio Call</button>
+
+      <p style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem;">Tap a message to ❤️ it.</p>
+
       <div id="chat-thread" class="chat-thread"></div>
 
       <div class="emoji-row">
@@ -66,6 +72,17 @@
         <input type="text" id="chat-input" placeholder="Text message..." autocomplete="off" required />
         <button type="submit" class="btn btn-primary btn-small">Send</button>
       </form>
+
+      <button id="toggle-poll-btn" type="button" class="btn btn-secondary btn-small" style="margin-top: 0.75rem;">📊 Send a Poll</button>
+
+      <form id="poll-form" class="poll-form hidden">
+        <input type="text" id="poll-question" placeholder="Ask a question..." required />
+        <input type="text" id="poll-option-a" placeholder="Option A" required />
+        <input type="text" id="poll-option-b" placeholder="Option B" required />
+        <button type="submit" class="btn btn-primary btn-small">Send Poll</button>
+      </form>
+
+      <audio id="remote-audio" autoplay></audio>
     </section>
   </main>
 
