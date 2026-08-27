@@ -251,6 +251,60 @@ if (whoamiGate && chatSection) {
     let answerListenerRef = null;
     let candidateListener = null; // { ref, handler } for the currently-watched candidate path
     let pendingCandidates = []; // candidates that arrive before we have a remote description yet
+    let ringInterval = null;
+    let ringAudioCtx = null;
+
+    // Ask permission (once) to show a popup notification outside the tab,
+    // so an incoming call gets noticed even if this tab isn't the one
+    // you're looking at. If denied, calls still work — you just won't
+    // get the popup, only the ringtone sound and on-page banner.
+    if (window.Notification && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+
+    function notifyIncomingCall(callerName) {
+      if (window.Notification && Notification.permission === "granted") {
+        try {
+          new Notification(`📞 ${callerName} is calling you!`, {
+            body: "Tap to open Craft Co. and answer.",
+          });
+        } catch (err) {
+          // Some browsers (mobile Safari) don't support this — ringtone still plays.
+        }
+      }
+    }
+
+    // A simple two-tone beep made with the Web Audio API (no sound file
+    // needed), repeated every 1.5s like a phone ringing, until answered,
+    // declined, or the caller hangs up.
+    function playRingtone() {
+      if (ringInterval) return;
+      const beep = () => {
+        try {
+          if (!ringAudioCtx) ringAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+          const osc = ringAudioCtx.createOscillator();
+          const gain = ringAudioCtx.createGain();
+          osc.type = "sine";
+          osc.frequency.value = 880;
+          gain.gain.value = 0.15;
+          osc.connect(gain);
+          gain.connect(ringAudioCtx.destination);
+          osc.start();
+          osc.stop(ringAudioCtx.currentTime + 0.4);
+        } catch (err) {
+          // Ignore if audio can't start yet (e.g. no user interaction on this page yet).
+        }
+      };
+      beep();
+      ringInterval = setInterval(beep, 1500);
+    }
+
+    function stopRingtone() {
+      if (ringInterval) {
+        clearInterval(ringInterval);
+        ringInterval = null;
+      }
+    }
 
     function showCallBar(html) {
       callBar.classList.remove("call-bar-error");
@@ -280,6 +334,7 @@ if (whoamiGate && chatSection) {
       inCall = false;
       myRole = null;
       pendingCandidates = [];
+      stopRingtone();
       if (answerListenerRef) {
         answerListenerRef.off();
         answerListenerRef = null;
@@ -442,13 +497,23 @@ if (whoamiGate && chatSection) {
         return;
       }
       if (call.status === "ringing" && call.caller !== getMyName() && !inCall) {
+        if (!ringInterval) {
+          playRingtone();
+          notifyIncomingCall(call.caller);
+        }
         showCallBar(`
           <span>📞 ${call.caller} is calling...</span>
           <button id="answer-call-btn" class="btn btn-secondary btn-small">Answer</button>
           <button id="decline-call-btn" class="btn btn-primary btn-small">Decline</button>
         `);
-        document.getElementById("answer-call-btn").addEventListener("click", () => answerCall(call.offer));
-        document.getElementById("decline-call-btn").addEventListener("click", () => callRef.remove());
+        document.getElementById("answer-call-btn").addEventListener("click", () => {
+          stopRingtone();
+          answerCall(call.offer);
+        });
+        document.getElementById("decline-call-btn").addEventListener("click", () => {
+          stopRingtone();
+          callRef.remove();
+        });
       }
     });
 

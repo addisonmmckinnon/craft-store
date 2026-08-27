@@ -85,7 +85,15 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
   between your two devices/browsers, not through Firebase. The database
   is only used to swap the initial connection info (offer/answer/ICE
   candidates) under `privateChat/call`, which gets cleared when the call
-  ends. Needs microphone permission in the browser the first time.
+  ends. Needs microphone permission in the browser the first time. Uses
+  a free public TURN server (Open Relay) as a fallback for when a direct
+  connection can't be made across two different home networks.
+- When someone calls, the other person gets a repeating ringtone sound
+  (generated in-browser, no sound file needed) plus a browser popup
+  notification if they've allowed notifications — so they notice even if
+  Cousins Only isn't the tab they're currently looking at. The popup only
+  works while the tab/browser is open somewhere, not if it's fully
+  closed (that would need a more complex always-on push setup).
 - The database rules are wide open (`.read`/`.write`: true) so anyone
   with the database URL could technically read/write it — `PASSCODE` is
   the only thing actually keeping randoms out, same as the
