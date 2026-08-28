@@ -257,6 +257,7 @@ if (whoamiGate && chatSection) {
     let pendingCandidates = []; // candidates that arrive before we have a remote description yet
     let ringInterval = null;
     let ringAudioCtx = null;
+    let ringSafetyTimeout = null;
     let screenStream = null;
     let screenSender = null;
     // Screen sharing needs its own back-and-forth after the call is already
@@ -312,9 +313,15 @@ if (whoamiGate && chatSection) {
       };
       beep();
       ringInterval = setInterval(beep, 1500);
+      // Safety net: if something goes wrong and Answer/Decline/cleanup
+      // never fires (bad connection, closed tab reopened, etc.), stop the
+      // beeping on its own after 30s instead of ringing forever.
+      clearTimeout(ringSafetyTimeout);
+      ringSafetyTimeout = setTimeout(stopRingtone, 30000);
     }
 
     function stopRingtone() {
+      clearTimeout(ringSafetyTimeout);
       if (ringInterval) {
         clearInterval(ringInterval);
         ringInterval = null;
