@@ -5,13 +5,17 @@
    no separate setup needed. Anyone with the passcode (in app.js) can
    read/write it, so this is only as private as that passcode is.
 
-   Three features live here:
+   Features live here:
    - Text messages with emoji
    - Tap a message to heart it (shared on/off toggle, not per-person)
    - Simple 2-option polls you can both vote on, tallied live
    - A 1-on-1 audio call over WebRTC, using the database purely to swap
      connection info (offer/answer/ICE candidates) between the two of
-     you — the actual audio goes peer-to-peer, not through Firebase.
+     you — the actual audio (and, when sharing, video) goes peer-to-peer,
+     not through Firebase.
+   - Screen sharing during a call ("🖥️ Share Screen") — not supported on
+     iPhone/iPad Safari (no browser API for it there), but an iPad can
+     still watch a shared screen from a computer just fine.
    ────────────────────────────────────────────── */
 const CHAT_FIREBASE_CONFIG = {
   apiKey: "AIzaSyCQdpy8NRBYE47eQ2VDRmjEOaLdROkI6q8",
@@ -36,6 +40,7 @@ if (whoamiGate && chatSection) {
   const callBar = document.getElementById("call-bar");
   const callDebug = document.getElementById("call-debug");
   const remoteAudio = document.getElementById("remote-audio");
+  const remoteVideo = document.getElementById("remote-video");
 
   let chatDb = null;
   function getChatDb() {
@@ -248,11 +253,21 @@ if (whoamiGate && chatSection) {
     let localStream = null;
     let inCall = false;
     let myRole = null; // "caller" or "callee" once a call starts
-    let answerListenerRef = null;
     let candidateListener = null; // { ref, handler } for the currently-watched candidate path
     let pendingCandidates = []; // candidates that arrive before we have a remote description yet
     let ringInterval = null;
     let ringAudioCtx = null;
+    let screenStream = null;
+    let screenSender = null;
+    // Screen sharing needs its own back-and-forth after the call is already
+    // connected (adding the screen as a new "track" changes the connection,
+    // so both sides have to swap a fresh offer/answer for it — this is
+    // called "renegotiation"). These track which offer/answer we've already
+    // applied so we don't process the same one twice or miss a new one.
+    let lastAppliedOfferVersion = 0;
+    let lastAppliedAnswerVersion = 0;
+    let lastSentOfferVersion = 0;
+    let lastSentAnswerVersion = 0;
 
     // Ask permission (once) to show a popup notification outside the tab,
     // so an incoming call gets noticed even if this tab isn't the one
@@ -334,15 +349,20 @@ if (whoamiGate && chatSection) {
       inCall = false;
       myRole = null;
       pendingCandidates = [];
+      lastAppliedOfferVersion = 0;
+      lastAppliedAnswerVersion = 0;
+      lastSentOfferVersion = 0;
+      lastSentAnswerVersion = 0;
       stopRingtone();
-      if (answerListenerRef) {
-        answerListenerRef.off();
-        answerListenerRef = null;
-      }
       if (candidateListener) {
         candidateListener.ref.off("child_added", candidateListener.handler);
         candidateListener = null;
       }
+      if (screenStream) {
+        screenStream.getTracks().forEach((t) => t.stop());
+        screenStream = null;
+      }
+      screenSender = null;
       if (pc) {
         pc.close();
         pc = null;
@@ -352,6 +372,8 @@ if (whoamiGate && chatSection) {
         localStream = null;
       }
       remoteAudio.srcObject = null;
+      remoteVideo.srcObject = null;
+      remoteVideo.classList.add("hidden");
       startCallBtn.classList.remove("hidden");
       hideCallBar();
     }
@@ -364,6 +386,15 @@ if (whoamiGate && chatSection) {
         }
       };
       connection.ontrack = (event) => {
+        if (event.track.kind === "video") {
+          remoteVideo.srcObject = event.streams[0];
+          remoteVideo.classList.remove("hidden");
+          event.track.onended = () => {
+            remoteVideo.classList.add("hidden");
+            remoteVideo.srcObject = null;
+          };
+          return;
+        }
         remoteAudio.srcObject = event.streams[0];
         // Browsers (especially on phones) often silently block audio from
         // playing automatically, even with the "autoplay" attribute, if it
@@ -417,6 +448,106 @@ if (whoamiGate && chatSection) {
       candidateListener = { ref, handler };
     }
 
+    function onCallControlsRendered() {
+      const shareBtn = document.getElementById("share-screen-btn");
+      if (shareBtn) shareBtn.addEventListener("click", toggleScreenShare);
+      const soundBtn = document.getElementById("sound-btn");
+      if (soundBtn) soundBtn.addEventListener("click", () => remoteAudio.play().catch(() => {}));
+      const endBtn = document.getElementById("end-call-btn");
+      if (endBtn) endBtn.addEventListener("click", endCall);
+    }
+
+    function onCallControlsHtml(extraLeft) {
+      const shareLabel = screenStream ? "🖥️ Stop Sharing" : "🖥️ Share Screen";
+      return `${extraLeft || ""} <button id="share-screen-btn" class="btn btn-secondary btn-small">${shareLabel}</button> <button id="sound-btn" class="btn btn-secondary btn-small">🔊 Enable Sound</button> <button id="end-call-btn" class="btn btn-primary btn-small">End</button>`;
+    }
+
+    // Adding or removing the screen-share video track changes what the
+    // connection needs to describe, so it triggers a fresh round of
+    // offer/answer (a "renegotiation") between the two of you, using the
+    // same versioned offer/answer fields as the very first connection.
+    async function renegotiate() {
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      lastSentOfferVersion += 1;
+      await callRef.update({
+        offer: { type: offer.type, sdp: offer.sdp, version: lastSentOfferVersion, from: myRole },
+      });
+    }
+
+    async function toggleScreenShare() {
+      if (screenStream) {
+        stopScreenShare();
+        return;
+      }
+      if (!navigator.mediaDevices.getDisplayMedia) {
+        showCallError("Screen sharing isn't supported in this browser (iPhone/iPad Safari can't share a screen, but can watch one).");
+        return;
+      }
+      try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+      } catch (err) {
+        return; // they closed the "choose what to share" picker — not an error
+      }
+      const track = screenStream.getVideoTracks()[0];
+      screenSender = pc.addTrack(track, screenStream);
+      track.onended = stopScreenShare;
+      showCallBar(onCallControlsHtml(`<span>📞 On call with ${otherName()}</span>`));
+      onCallControlsRendered();
+      await renegotiate();
+    }
+
+    function stopScreenShare() {
+      if (screenSender) {
+        pc.removeTrack(screenSender);
+        screenSender = null;
+      }
+      if (screenStream) {
+        screenStream.getTracks().forEach((t) => t.stop());
+        screenStream = null;
+      }
+      if (inCall) {
+        showCallBar(onCallControlsHtml(`<span>📞 On call with ${otherName()}</span>`));
+        onCallControlsRendered();
+        renegotiate();
+      }
+    }
+
+    // Handles both the very first offer/answer AND any later renegotiation
+    // (like starting or stopping screen share) with the same code, since
+    // either side can now send a fresh offer after the call has started.
+    function watchForRenegotiation() {
+      callRef.child("offer").on("value", async (snap) => {
+        const offer = snap.val();
+        if (!offer || !pc || offer.from === myRole) return;
+        if ((offer.version || 0) <= lastAppliedOfferVersion) return;
+        lastAppliedOfferVersion = offer.version;
+        await pc.setRemoteDescription(new RTCSessionDescription(offer));
+        flushPendingCandidates();
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        lastSentAnswerVersion += 1;
+        await callRef.update({
+          status: "active",
+          answer: { type: answer.type, sdp: answer.sdp, version: lastSentAnswerVersion, from: myRole },
+        });
+        showCallBar(onCallControlsHtml(`<span>📞 On call with ${otherName()}</span>`));
+        onCallControlsRendered();
+      });
+      callRef.child("answer").on("value", async (snap) => {
+        const answer = snap.val();
+        if (!answer || !pc || answer.from === myRole) return;
+        if ((answer.version || 0) <= lastAppliedAnswerVersion) return;
+        if (pc.signalingState !== "have-local-offer") return;
+        lastAppliedAnswerVersion = answer.version;
+        await pc.setRemoteDescription(new RTCSessionDescription(answer));
+        flushPendingCandidates();
+        showCallBar(onCallControlsHtml(`<span>📞 On call with ${otherName()}</span>`));
+        onCallControlsRendered();
+      });
+    }
+    watchForRenegotiation();
+
     async function startCall() {
       startCallBtn.classList.add("hidden");
       showCallBar(`<span>📞 Calling ${otherName()}...</span>`);
@@ -435,26 +566,19 @@ if (whoamiGate && chatSection) {
 
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
+      lastSentOfferVersion = 1;
       await callRef.set({
         status: "ringing",
         caller: getMyName(),
-        offer: { type: offer.type, sdp: offer.sdp },
+        offer: { type: offer.type, sdp: offer.sdp, version: 1, from: "caller" },
       });
 
       showCallBar(`<span>📞 Calling ${otherName()}...</span> <button id="end-call-btn" class="btn btn-primary btn-small">End</button>`);
       document.getElementById("end-call-btn").addEventListener("click", endCall);
-
-      answerListenerRef = callRef.child("answer");
-      answerListenerRef.on("value", async (snap) => {
-        const answer = snap.val();
-        if (answer && pc && !pc.currentRemoteDescription) {
-          await pc.setRemoteDescription(new RTCSessionDescription(answer));
-          flushPendingCandidates();
-          showCallBar(`<span>📞 On call with ${otherName()}</span> <button id="sound-btn" class="btn btn-secondary btn-small">🔊 Enable Sound</button> <button id="end-call-btn" class="btn btn-primary btn-small">End</button>`);
-          document.getElementById("sound-btn").addEventListener("click", () => remoteAudio.play().catch(() => {}));
-          document.getElementById("end-call-btn").addEventListener("click", endCall);
-        }
-      });
+      // The answer is picked up by watchForRenegotiation() below once the
+      // other person taps Answer — that same code also handles later
+      // renegotiation (like turning screen share on/off), so it isn't
+      // duplicated here.
     }
 
     async function answerCall(offer) {
@@ -475,13 +599,15 @@ if (whoamiGate && chatSection) {
       localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
 
       await pc.setRemoteDescription(new RTCSessionDescription(offer));
+      lastAppliedOfferVersion = offer.version || 1;
       flushPendingCandidates();
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
-      await callRef.update({ status: "active", answer: { type: answer.type, sdp: answer.sdp } });
+      lastSentAnswerVersion = 1;
+      await callRef.update({ status: "active", answer: { type: answer.type, sdp: answer.sdp, version: 1, from: "callee" } });
 
-      showCallBar(`<span>📞 On call with ${otherName()}</span> <button id="end-call-btn" class="btn btn-primary btn-small">End</button>`);
-      document.getElementById("end-call-btn").addEventListener("click", endCall);
+      showCallBar(onCallControlsHtml(`<span>📞 On call with ${otherName()}</span>`));
+      onCallControlsRendered();
     }
 
     function endCall() {

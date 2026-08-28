@@ -94,6 +94,12 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
   Cousins Only isn't the tab they're currently looking at. The popup only
   works while the tab/browser is open somewhere, not if it's fully
   closed (that would need a more complex always-on push setup).
+- During a call, "🖥️ Share Screen" lets either person share their screen
+  with the other, using the browser's screen-picker popup — video goes
+  peer-to-peer like the audio does. Not available on iPhone/iPad Safari
+  (Apple doesn't provide a screen-share API to browsers there), so the
+  button shows a friendly message instead of doing nothing silently; an
+  iPad can still watch a computer's shared screen without any trouble.
 - The database rules are wide open (`.read`/`.write`: true) so anyone
   with the database URL could technically read/write it — `PASSCODE` is
   the only thing actually keeping randoms out, same as the

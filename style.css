@@ -491,6 +491,15 @@ main {
   background: var(--coral-dark);
 }
 
+#remote-video {
+  width: 100%;
+  max-width: 420px;
+  border-radius: var(--radius);
+  margin: 0.75rem auto;
+  display: block;
+  box-shadow: var(--shadow);
+}
+
 /* ── Forms ── */
 form {
   background: var(--white);
