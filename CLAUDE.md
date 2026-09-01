@@ -19,6 +19,19 @@ build tools — plain HTML, CSS, and vanilla JavaScript only.
   soon" placeholder box (same pattern as the recipe-book and BCS Store
   sites). Swap in real `<img>` tags once you have photos.
 
+## Site-wide password
+- The ENTIRE site (every page) is locked behind one password until it's
+  entered — `SITE_PASSWORD` at the very top of `app.js`, currently
+  `"addy"`. Each page has the same `#site-gate` overlay markup right
+  after `<body>` (see any page's HTML), which covers the whole screen
+  until unlocked; `app.js` handles checking the password and remembering
+  it's unlocked for the browser tab (`sessionStorage`), so it only asks
+  once per visit across every page.
+- This is separate from — and in addition to — the Cousins Only and
+  Member passcodes further into the site; those still apply on top of
+  this one.
+- To change it: edit `SITE_PASSWORD` in `app.js` and redeploy.
+
 ## How things work
 - **Products** live in `PRODUCTS` at the top of `app.js` — id, name,
   maker (who made it, just for display), and price. All placeholders —

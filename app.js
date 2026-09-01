@@ -1,4 +1,35 @@
 /* ──────────────────────────────────────────────
+   SITE-WIDE PASSWORD GATE
+   Every page has a #site-gate overlay in its HTML that covers the whole
+   screen until this password is entered — separate from the Cousins
+   Only and Member passcodes further into the site. Unlocking is
+   remembered for the browser tab session (sessionStorage), so you only
+   enter it once per visit, same page to page.
+   ────────────────────────────────────────────── */
+const SITE_PASSWORD = "addy";
+(function () {
+  const gate = document.getElementById("site-gate");
+  if (!gate) return;
+  if (sessionStorage.getItem("craftSiteUnlocked") === "true") {
+    gate.classList.add("hidden");
+    return;
+  }
+  const form = document.getElementById("site-gate-form");
+  const input = document.getElementById("site-gate-input");
+  const error = document.getElementById("site-gate-error");
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (input.value === SITE_PASSWORD) {
+      sessionStorage.setItem("craftSiteUnlocked", "true");
+      gate.classList.add("hidden");
+    } else {
+      error.textContent = "That's not it — try again.";
+      error.classList.remove("hidden");
+    }
+  });
+})();
+
+/* ──────────────────────────────────────────────
    PRODUCT CATALOG
    Placeholder items/prices — Addy & cousin: update these with your real
    products! "maker" is just for display (who makes it).
